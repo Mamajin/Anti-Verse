@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ColonyList } from './pages/ColonyList';
 import { ColonyDetail } from './pages/ColonyDetail';
+import { LogEntries } from './pages/LogEntries';
 import { Layout } from './components/common/Layout';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleGuard } from './components/common/RoleGuard';
@@ -19,9 +20,10 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/" element={<DashboardPage />} />
-            {/* Phase 2: Colonies */}
+            {/* Phase 2/3: Colonies & Logs */}
             <Route path="/colonies" element={<ColonyList />} />
             <Route path="/colonies/:id" element={<ColonyDetail />} />
+            <Route path="/colonies/:id/logs" element={<LogEntries />} />
             
             {/* Phase 5: Settings / Admin */}
             {/* <Route path="/settings" element={<Settings />} /> */}
