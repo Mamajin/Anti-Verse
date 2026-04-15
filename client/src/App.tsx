@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ColonyList } from './pages/ColonyList';
+import { ColonyDetail } from './pages/ColonyDetail';
 import { Layout } from './components/common/Layout';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { RoleGuard } from './components/common/RoleGuard';
@@ -18,8 +20,8 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<DashboardPage />} />
             {/* Phase 2: Colonies */}
-            {/* <Route path="/colonies" element={<ColonyList />} /> */}
-            {/* <Route path="/colonies/:id" element={<ColonyDetail />} /> */}
+            <Route path="/colonies" element={<ColonyList />} />
+            <Route path="/colonies/:id" element={<ColonyDetail />} />
             
             {/* Phase 5: Settings / Admin */}
             {/* <Route path="/settings" element={<Settings />} /> */}
