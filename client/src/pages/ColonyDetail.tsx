@@ -31,9 +31,21 @@ export const ColonyDetail = () => {
         
         <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-10">
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20">
-                <FlaskConical size={28} className="text-primary" />
+            <div className="flex items-center gap-6">
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-xl">
+                  <img 
+                    src="/assets/placeholders/specimen-placeholder.png" 
+                    alt="Specimen Profile" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/placeholders/specimen-placeholder.png';
+                    }}
+                  />
+                </div>
+                <div className="absolute -bottom-2 -right-2 p-1.5 bg-primary rounded-lg shadow-lg border border-white/20">
+                  <FlaskConical size={16} className="text-primary-content" />
+                </div>
               </div>
               <div className="space-y-0.5 bg-glass-light px-4 py-2">
                 <div className="flex items-center gap-3">

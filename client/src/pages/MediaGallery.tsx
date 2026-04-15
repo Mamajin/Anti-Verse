@@ -49,7 +49,15 @@ export const MediaGallery = () => {
               {files.map(file => (
                 <div key={file.id} className="group relative rounded-3xl overflow-hidden bg-base-300 aspect-square shadow-md border border-base-content/10">
                   {file.contentType.startsWith('image') ? (
-                     <img src={file.url} alt={file.filename} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                     <img 
+                       src={file.url} 
+                       alt={file.filename} 
+                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                       loading="lazy" 
+                       onError={(e) => {
+                         (e.target as HTMLImageElement).src = '/assets/placeholders/specimen-placeholder.png';
+                       }}
+                     />
                   ) : (
                      <video src={file.url} className="w-full h-full object-cover" controls preload="metadata"></video>
                   )}

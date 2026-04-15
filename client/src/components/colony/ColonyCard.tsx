@@ -13,7 +13,19 @@ export function ColonyCard({ colony, onClick }: ColonyCardProps) {
       className="group relative overflow-hidden rounded-3xl bg-base-100/40 backdrop-blur-md border border-base-content/5 hover:border-primary/40 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-500 cursor-pointer"
       onClick={() => onClick(colony.id)}
     >
-      <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
+      <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors z-20" />
+      
+      <div className="h-48 overflow-hidden relative border-b border-base-content/5">
+        <img 
+          src="/assets/placeholders/specimen-placeholder.png" 
+          alt="Specimen Preview" 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 group-hover:opacity-100"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/assets/placeholders/specimen-placeholder.png';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-base-200/80 to-transparent" />
+      </div>
       
       <div className="card-body p-7">
         <div className="flex justify-between items-start mb-6">
