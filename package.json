@@ -1,0 +1,18 @@
+{
+  "name": "anti-verse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Digital platform for ant keepers and researchers",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "client"
+  ],
+  "scripts": {
+    "typecheck": "npm run build --workspaces --if-present",
+    "clean": "rimraf packages/*/dist services/*/dist client/dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

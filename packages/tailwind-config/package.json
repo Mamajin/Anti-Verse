@@ -1,0 +1,12 @@
+{
+  "name": "@antiverse/tailwind-config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "daisyui": "^4.12.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
