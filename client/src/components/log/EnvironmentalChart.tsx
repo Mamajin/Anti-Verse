@@ -6,8 +6,8 @@ export function EnvironmentalChart() {
 
   // Filter logs with environmental data
   const envLogs = entries
-    .filter(e => e.temperature !== null || e.humidity !== null)
-    .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+    .filter(e => e.environmentalReading?.temperature != null || e.environmentalReading?.humidity != null)
+    .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
 
   if (envLogs.length === 0) {
     return (
@@ -25,15 +25,15 @@ export function EnvironmentalChart() {
     dataLabels: { enabled: false },
     theme: { mode: 'light' },
     xaxis: { 
-      categories: envLogs.map(e => new Date(e.recordedAt).toLocaleDateString()),
+      categories: envLogs.map(e => new Date(e.occurredAt).toLocaleDateString()),
       labels: { show: false } 
     },
     tooltip: { theme: 'light' },
   };
 
   const series = [
-    { name: 'Temperature (°C)', data: envLogs.map(e => e.temperature || 0) },
-    { name: 'Humidity (%)', data: envLogs.map(e => e.humidity || 0) },
+    { name: 'Temperature (°C)', data: envLogs.map(e => e.environmentalReading?.temperature || 0) },
+    { name: 'Humidity (%)', data: envLogs.map(e => e.environmentalReading?.humidity || 0) },
   ];
 
   return (

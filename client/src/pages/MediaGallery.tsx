@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMediaStore } from '../stores/mediaStore';
 import { MediaUploader } from '../components/media/MediaUploader';
 import { ArrowLeft, Trash2, ShieldCheck, Download } from 'lucide-react';
-import { MediaStatus } from '@antiverse/types';
 
 export const MediaGallery = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +44,7 @@ export const MediaGallery = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {files.map(file => (
                 <div key={file.id} className="group relative rounded-3xl overflow-hidden bg-base-300 aspect-square shadow-md border border-base-content/10">
-                  {file.mediaType === 'image' ? (
+                  {file.contentType.startsWith('image') ? (
                      <img src={file.url} alt={file.filename} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
                   ) : (
                      <video src={file.url} className="w-full h-full object-cover" controls preload="metadata"></video>
@@ -53,7 +52,7 @@ export const MediaGallery = () => {
                   
                   {/* Status Badges */}
                   <div className="absolute top-4 left-4 flex gap-2">
-                    {file.status === MediaStatus.Pending && <span className="badge badge-warning shadow-md backdrop-blur-md bg-warning/90 border-0">Encrypting</span>}
+                    {file.status === 'pending' && <span className="badge badge-warning shadow-md backdrop-blur-md bg-warning/90 border-0">Encrypting</span>}
                   </div>
 
                   {/* Hover Actions Panel */}

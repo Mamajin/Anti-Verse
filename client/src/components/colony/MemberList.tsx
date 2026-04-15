@@ -1,4 +1,4 @@
-import { UserCircle } from 'lucide-react';
+
 import type { ColonyMember } from '@antiverse/types';
 
 export const MemberList = ({ members }: { members: ColonyMember[] }) => {

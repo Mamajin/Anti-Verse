@@ -1,9 +1,8 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLogStore } from '../stores/logStore';
 import { EnvironmentalChart } from '../components/log/EnvironmentalChart';
 import { ArrowLeft, Clock, Plus, Trash2 } from 'lucide-react';
-import { LogEntryType } from '@antiverse/types';
 
 export const LogEntries = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,7 +10,7 @@ export const LogEntries = () => {
   const { entries, fetchEntries, createEntry, deleteEntry, isLoading } = useLogStore();
 
   const [formData, setFormData] = useState({
-    entryType: LogEntryType.Observation,
+    entryType: 'observation',
     notes: '',
     temperature: '',
     humidity: '',
@@ -26,12 +25,15 @@ export const LogEntries = () => {
     if (!id) return;
     try {
       await createEntry(id, {
-        entryType: formData.entryType,
-        notes: formData.notes,
-        temperature: formData.temperature ? parseFloat(formData.temperature) : undefined,
-        humidity: formData.humidity ? parseFloat(formData.humidity) : undefined,
+        title: [formData.entryType.charAt(0).toUpperCase() + formData.entryType.slice(1), 'Log'].join(' '),
+        entryType: formData.entryType as any,
+        content: formData.notes,
+        environmentalReading: {
+           temperature: formData.temperature ? parseFloat(formData.temperature) : undefined,
+           humidity: formData.humidity ? parseFloat(formData.humidity) : undefined,
+        }
       });
-      setFormData({ entryType: LogEntryType.Observation, notes: '', temperature: '', humidity: '' });
+      setFormData({ entryType: 'observation', notes: '', temperature: '', humidity: '' });
     } catch (console) { }
   };
 
@@ -54,11 +56,11 @@ export const LogEntries = () => {
             
             <div className="form-control mb-4">
               <label className="label"><span className="label-text">Classification</span></label>
-              <select className="select select-bordered" value={formData.entryType} onChange={e => setFormData({...formData, entryType: e.target.value as LogEntryType})}>
-                <option value={LogEntryType.Observation}>Observation</option>
-                <option value={LogEntryType.Feeding}>Feeding</option>
-                <option value={LogEntryType.Maintenance}>Maintenance</option>
-                <option value={LogEntryType.Mortality}>Mortality</option>
+              <select className="select select-bordered" value={formData.entryType} onChange={e => setFormData({...formData, entryType: e.target.value})}>
+                <option value="observation">Observation</option>
+                <option value="feeding">Feeding</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="environmental">Environmental</option>
               </select>
             </div>
 
@@ -97,14 +99,14 @@ export const LogEntries = () => {
                    <div className="flex-1">
                      <div className="flex justify-between items-start">
                         <span className="badge badge-outline capitalize mb-2">{entry.entryType}</span>
-                        <span className="text-xs text-base-content/40 font-mono">{new Date(entry.recordedAt).toLocaleString()}</span>
+                        <span className="text-xs text-base-content/40 font-mono">{new Date(entry.occurredAt).toLocaleString()}</span>
                      </div>
-                     <p className="text-base-content/90 whitespace-pre-wrap">{entry.notes}</p>
+                     <p className="text-base-content/90 whitespace-pre-wrap">{entry.content}</p>
                      
-                     {(entry.temperature || entry.humidity) && (
+                     {(entry.environmentalReading?.temperature != null || entry.environmentalReading?.humidity != null) && (
                        <div className="mt-3 flex gap-3 text-xs font-semibold text-base-content/60 bg-base-200/50 p-2 rounded-lg inline-flex border border-base-content/5">
-                         {entry.temperature && <span>🌡️ {entry.temperature}°C</span>}
-                         {entry.humidity && <span>💧 {entry.humidity}%</span>}
+                         {entry.environmentalReading?.temperature != null && <span>🌡️ {entry.environmentalReading?.temperature}°C</span>}
+                         {entry.environmentalReading?.humidity != null && <span>💧 {entry.environmentalReading?.humidity}%</span>}
                        </div>
                      )}
                    </div>

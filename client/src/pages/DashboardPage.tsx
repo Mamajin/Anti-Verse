@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Chart from 'react-apexcharts';
 import { useAuthStore } from '../stores/authStore';
 import { useColonyStore } from '../stores/colonyStore';
@@ -81,7 +81,7 @@ export const DashboardPage = () => {
                   <li key={c.id} className="flex justify-between items-center p-3 hover:bg-base-200/50 rounded-xl transition-colors cursor-pointer group">
                      <div>
                        <div className="font-semibold group-hover:text-primary transition-colors">{c.name}</div>
-                       <div className="text-xs text-base-content/60">{c.species}</div>
+                       <div className="text-xs text-base-content/60">{c.species?.scientificName}</div>
                      </div>
                      <div className={`badge ${c.status === 'active' ? 'badge-success' : 'badge-ghost'} badge-sm`}>
                        {c.status}

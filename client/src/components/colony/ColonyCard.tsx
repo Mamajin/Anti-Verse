@@ -1,4 +1,4 @@
-import { Users, Bug } from 'lucide-react';
+import { Bug } from 'lucide-react';
 import type { Colony } from '@antiverse/types';
 import { ColonyStatusBadge } from './ColonyStatusBadge';
 

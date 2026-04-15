@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { useDropzone, FileRejection } from 'react-dropzone';
-import { UploadCloud, FileImage, X } from 'lucide-react';
+import { useDropzone, type FileRejection } from 'react-dropzone';
+import { UploadCloud, FileImage } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
   uploadProgress: Record<string, number>;
 }
 
-export function MediaUploader({ onUpload, isUploading, uploadProgress }: Props) {
+export function MediaUploader({ onUpload, uploadProgress }: Props) {
   const onDrop = useCallback(async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
       toast.error('Only image and video files under 50MB are allowed.');
