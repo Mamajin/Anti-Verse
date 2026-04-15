@@ -26,7 +26,7 @@ const MIME_TO_EXT: Record<string, string> = {
 };
 
 export class MediaController {
-  
+
   static async requestUpload(req: Request, res: Response, next: NextFunction) {
     try {
       const data = req.body;
@@ -92,14 +92,14 @@ export class MediaController {
       // Verify S3 object exists
       let exists = false;
       try {
-         await s3.send(new HeadObjectCommand({
-           Bucket: config.S3_BUCKET,
-           Key: record.file_key,
-         }));
-         exists = true;
+        await s3.send(new HeadObjectCommand({
+          Bucket: config.S3_BUCKET,
+          Key: record.file_key,
+        }));
+        exists = true;
       } catch (e: any) {
-         if (e.name === 'NotFound') exists = false;
-         else throw e;
+        if (e.name === 'NotFound') exists = false;
+        else throw e;
       }
 
       if (!exists) {

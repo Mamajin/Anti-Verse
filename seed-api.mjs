@@ -6,178 +6,210 @@ const URLS = {
   log: 'http://localhost:3003'
 };
 
-// --- Realistic observation templates ---
-const observationNotes = [
-  'Queen observed laying a steady batch of eggs in the brood chamber. Workers actively tending larvae nearby.',
-  'Major workers spotted clearing debris from the main tunnel entrance after overnight condensation.',
-  'Foraging trail extending ~15cm towards the sugar water feeder. Recruitment pheromone trail is well-established.',
-  'Minor workers observed transporting freshly eclosed pupae to the upper humidity chamber.',
-  'Slight territorial skirmish between two minor workers near the food staging area. Resolved within seconds.',
-  'Queen relocated herself from the primary nest chamber to the secondary tunnel. Workers followed within the hour.',
-  'Brood pile reorganized by nurses — eggs separated from early-instar larvae. Classic sorting behavior.',
-  'Dead worker removed from nest interior and deposited in the midden pile. Hygienic behavior confirmed.',
-  'New lateral tunnel excavated overnight, approximately 2cm in length. Soil deposit visible at the surface.',
-  'Workers observed engaging in trophallaxis near the colony entrance. Food sharing is active.',
-  'Aerial alates spotted in the upper formicarium chamber — nuptial flight preparation may be imminent.',
-  'Colony response to gentle vibration stimulus: moderate alarm pheromone release, defensive posturing from majors.',
-  'Larvae have entered the pre-pupal spinning stage. Cocoon formation expected within 48 hours.',
-  'Fungal growth detected in the southwest corner of the outworld. Workers actively avoiding the area.',
-  'First generation of nanitic workers from the founding queen have begun foraging independently.',
+const USERS = [
+  { email: 'main.researcher@antiverse.com', password: 'Password123!', displayName: 'Dr. Elena Vance', role: 'researcher' },
+  { email: 'lab.assistant@antiverse.com', password: 'Password123!', displayName: 'Assistant Barney', role: 'keeper' },
+  { email: 'guest.viewer@antiverse.com', password: 'Password123!', displayName: 'Observer G-Man', role: 'researcher' }
 ];
 
-const feedingNotes = [
-  'Offered 0.5ml honey-water solution (1:3 ratio). Colony consumed within 2 hours.',
-  'Protein feeding: two small crickets introduced. Major workers dismembered prey within 45 minutes.',
-  'Sugar water refilled in feeder tube. Previous batch fully depleted over 18 hours.',
-  'Offered fruit fly larvae as protein supplement. Workers showed immediate interest and began transporting to brood.',
-  'Test feeding with diluted maple syrup — moderate acceptance. Will compare to standard honey-water next session.',
+const SPECIES_SEED = [
+  { id: '11111111-1111-1111-1111-111111111111', scientific_name: 'Camponotus pennsylvanicus', common_name: 'Eastern Carpenter Ant', subfamily: 'Formicinae' },
+  { id: '22222222-2222-2222-2222-222222222222', scientific_name: 'Lasius niger', common_name: 'Black Garden Ant', subfamily: 'Formicinae' },
+  { id: '33333333-3333-3333-3333-333333333333', scientific_name: 'Tetramorium immigrans', common_name: 'Pavement Ant', subfamily: 'Myrmicinae' },
+  { id: '44444444-4444-4444-4444-444444444444', scientific_name: 'Pogonomyrmex barbatus', common_name: 'Red Harvester Ant', subfamily: 'Myrmicinae' },
+  { id: '55555555-5555-5555-5555-555555555555', scientific_name: 'Atta cephalotes', common_name: 'Leafcutter Ant', subfamily: 'Myrmicinae' }
 ];
 
-const maintenanceNotes = [
-  'Replaced cotton water reservoir in test tube setup. Old cotton showed slight discoloration.',
-  'Moisture gradient adjusted in the outworld — added 2ml distilled water to the substrate in Zone B.',
-  'Cleaned the foraging area glass with distilled water to improve observation clarity.',
-  'Replaced the red film on the nest chamber to reduce light stress during observations.',
-  'Rebalanced humidity in the main nest by adjusting the water tower wick. Target: 60-70% RH.',
+const OBSERVATIONS = [
+  "Queen is active and tending to the new egg pile.",
+  "Major workers observed clearing debris from the main entrance.",
+  "New foraging trail established towards the sugar water source.",
+  "Minor workers observed transporting pupae to the lower humidity chamber.",
+  "Increased activity near the heat cable area.",
+  "First generation of workers starting to eclose.",
+  "Colony defensive posture noted during habitat vibration test.",
+  "Workers observed cleaning the founding queen.",
+  "Tunneling progress has reached the side wall of the formicarium.",
+  "Foraging activity peak reached around 22:00 local time."
 ];
 
-const environmentalNotes = [
-  'Ambient room temperature fluctuated due to HVAC cycle. Nest interior remained buffered.',
-  'Light cycle set to 14L:10D to simulate late spring photoperiod.',
-  'Barometric pressure drop detected — colony activity noticeably decreased during the low front.',
-  'Installed secondary hygrometer probe in nest chamber for cross-calibration verification.',
-  'Night-time temperature dip recorded. Heating cable activated to maintain 24°C floor.',
+const FEEDING_NOTES = [
+  "Supplied 0.5ml 20% sucrose solution. Accepted immediately.",
+  "Introducted 3 fruit flies (D. melanogaster). Workers efficiently retrieved them.",
+  "Supplied small piece of cooked chicken protein. High interest from majors.",
+  "Refilled main water reservoir.",
+  "Cleaned out old midden pile from the outworld."
 ];
 
-function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+const SAMPLE_MEDIA = [
+  { filename: 'nest_overview.jpg', contentType: 'image/jpeg', caption: 'Overview of the primary brood chamber.' },
+  { filename: 'queen_close_up.jpg', contentType: 'image/jpeg', caption: 'High magnification shot of the queen.' },
+  { filename: 'foraging_trail.jpg', contentType: 'image/jpeg', caption: 'Active foraging trail near the sugar feeder.' },
+  { filename: 'new_larvae.jpg', contentType: 'image/jpeg', caption: 'Close up of the newly hatched larvae.' }
+];
 
-async function start() {
-  console.log("=> Initializing realistic mock data pipeline...\n");
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  // 1. Seed species directly via Postgres
+async function seedSpecies() {
   const client = new pg.Client('postgresql://antiverse_user:password@localhost:5432/antiverse');
   await client.connect();
-  const species = [
-    { id: '11111111-1111-1111-1111-111111111111', sn: 'Camponotus pennsylvanicus', cn: 'Eastern Carpenter Ant', sf: 'Formicinae', desc: 'Large polymorphic carpenter ant native to eastern North America.', reg: 'Eastern North America' },
-    { id: '22222222-2222-2222-2222-222222222222', sn: 'Lasius niger', cn: 'Black Garden Ant', sf: 'Formicinae', desc: 'Extremely common monomorphic garden ant with excellent adaptability.', reg: 'Europe & Asia' },
-    { id: '33333333-3333-3333-3333-333333333333', sn: 'Tetramorium immigrans', cn: 'Pavement Ant', sf: 'Myrmicinae', desc: 'Small brown ant known for massive territorial battles on pavement.', reg: 'Europe (Globally Introduced)' },
-    { id: '44444444-4444-4444-4444-444444444444', sn: 'Pogonomyrmex barbatus', cn: 'Red Harvester Ant', sf: 'Myrmicinae', desc: 'Seed-collecting desert ant with a potent sting. Important ecological role.', reg: 'Southwestern United States' },
-    { id: '55555555-5555-5555-5555-555555555555', sn: 'Atta cephalotes', cn: 'Leafcutter Ant', sf: 'Myrmicinae', desc: 'Fungus-farming ant with extreme caste polymorphism and complex societies.', reg: 'Central & South America' },
-  ];
-  for (const s of species) {
-    await client.query(
-      `INSERT INTO colony_species (id, scientific_name, common_name, subfamily, description, native_region) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (scientific_name) DO NOTHING`,
-      [s.id, s.sn, s.cn, s.sf, s.desc, s.reg]
-    );
+  console.log("-> Seeding species catalog...");
+  for (const s of SPECIES_SEED) {
+    await client.query(`
+      INSERT INTO colony_species (id, scientific_name, common_name, subfamily)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (scientific_name) DO NOTHING
+    `, [s.id, s.scientific_name, s.common_name, s.subfamily]);
   }
-  console.log("   [DB] 5 species seeded into colony_species catalog.");
   await client.end();
+}
 
-  // 2. Register a dedicated seed operator + login
-  const email = 'seed.operator@antiverse.com';
-  const password = 'SeedPassword123!';
-  
-  // Try register (may fail if already exists, that's fine)
-  let regRes = await fetch(`${URLS.auth}/api/auth/register`, {
+async function registerAndLogin(user) {
+  try {
+    await fetch(`${URLS.auth}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+  } catch (e) {}
+
+  const loginRes = await fetch(`${URLS.auth}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, displayName: 'Dr. Maria Santos' })
+    body: JSON.stringify({ email: user.email, password: user.password })
   });
-  if (!regRes.ok) {
-    console.log("   [AUTH] Registration skipped (user may already exist).");
-  } else {
-    console.log("   [AUTH] Registered operator: " + email);
+  
+  const payload = await loginRes.json();
+  if (!loginRes.ok) throw new Error(`Login failed for ${user.email}: ${JSON.stringify(payload)}`);
+  return { token: payload.data.accessToken, id: payload.data.user.id };
+}
+
+async function start() {
+  console.log("=> Initializing Deep Seeder Pipeline...");
+
+  await seedSpecies();
+
+  const userContexts = {};
+  for (const u of USERS) {
+    console.log(`-> Preparing user: ${u.email}`);
+    userContexts[u.email] = await registerAndLogin(u);
+    await sleep(200);
   }
 
-  // Login
-  let loginRes = await fetch(`${URLS.auth}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+  // Get ACTUAL species IDs from API
+  console.log("-> Fetching actual species IDs...");
+  const specRes = await fetch(`${URLS.colony}/api/colonies/species`, {
+      headers: { 'Authorization': `Bearer ${userContexts[USERS[0].email].token}` }
   });
-  if (!loginRes.ok) throw new Error("Login failed: " + await loginRes.text());
-  const { data: loginData } = await loginRes.json();
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${loginData.accessToken}` };
-  console.log("   [AUTH] Logged in as: " + loginData.user.displayName + "\n");
+  const specPayload = await specRes.json();
+  const speciesList = specPayload.data;
+  const scientificToId = {};
+  speciesList.forEach(s => scientificToId[s.scientificName] = s.id);
 
-  // 3. Fetch species from API
-  const { data: speciesList } = await (await fetch(`${URLS.colony}/api/colonies/species`, { headers })).json();
-  const speciesMap = {};
-  speciesList.forEach(s => speciesMap[s.commonName] = s.id);
-
-  // 4. Create 5 colonies with varied states
-  console.log("-> Creating colony biomes...");
-  const colonies = [
-    { name: 'Alpha Nest — Carpenter Project',    speciesId: speciesMap['Eastern Carpenter Ant'], queenCount: 1, estimatedWorkerCount: 48,  description: 'Founding colony captured in May 2025. Primary research subject for tunneling behavior analysis.' },
-    { name: 'Beta Sector — Garden Observation',   speciesId: speciesMap['Black Garden Ant'],      queenCount: 1, estimatedWorkerCount: 230, description: 'Mature colony transferred from outdoor habitat study. Monitoring foraging optimization strategies.' },
-    { name: 'Gamma Swarm — Pavement Research',    speciesId: speciesMap['Pavement Ant'],          queenCount: 2, estimatedWorkerCount: 680, description: 'Polygynous colony exhibiting unusual cooperative brood-rearing between queens.' },
-    { name: 'Delta Array — Harvester Seeds',      speciesId: speciesMap['Red Harvester Ant'],     queenCount: 1, estimatedWorkerCount: 125, description: 'Desert species adaptation study. Climate-controlled enclosure simulating arid conditions.' },
-    { name: 'Epsilon Cluster — Leafcutter Trial', speciesId: speciesMap['Leafcutter Ant'],        queenCount: 1, estimatedWorkerCount: 1200, description: 'Long-term fungal symbiosis monitoring project. Custom substrate with live plant provisions.' },
+  // Define some colonies
+  const COLONIES_DEF = [
+    { owner: 'main.researcher@antiverse.com', name: 'Vance Lab: Alpha Nest', sn: 'Camponotus pennsylvanicus', queenCount: 1, estimatedWorkerCount: 45 },
+    { owner: 'main.researcher@antiverse.com', name: 'Vance Lab: Experimental B', sn: 'Lasius niger', queenCount: 1, estimatedWorkerCount: 120 },
+    { owner: 'lab.assistant@antiverse.com', name: 'Sector 7: Harvester Study', sn: 'Pogonomyrmex barbatus', queenCount: 1, estimatedWorkerCount: 15 },
+    { owner: 'lab.assistant@antiverse.com', name: 'Sector 7: Pavement Colony', sn: 'Tetramorium immigrans', queenCount: 3, estimatedWorkerCount: 800 },
+    { owner: 'main.researcher@antiverse.com', name: 'Vance Lab: Leafcutter Trial', sn: 'Atta cephalotes', queenCount: 1, estimatedWorkerCount: 2500 }
   ];
 
-  const colonyIds = [];
-  for (const c of colonies) {
-    const res = await fetch(`${URLS.colony}/api/colonies`, { method: 'POST', headers, body: JSON.stringify(c) });
-    if (!res.ok) { console.error("   [COLONY] FAILED:", c.name, await res.text()); continue; }
-    const { data } = await res.json();
-    colonyIds.push(data.id);
-    console.log(`   + ${c.name}  (${c.estimatedWorkerCount} workers)`);
-  }
+  const createdColonies = [];
+  for (const c of COLONIES_DEF) {
+    const context = userContexts[c.owner];
+    const specId = scientificToId[c.sn];
+    if (!specId) continue;
 
-  // 5. Generate rich log entries per colony (varied types & realistic timestamps)
-  console.log("\n-> Populating telemetry logs (varied types across 30-day window)...");
-  
-  const entryTypes = ['observation', 'feeding', 'maintenance', 'environmental'];
-  const notesByType = {
-    observation: observationNotes,
-    feeding: feedingNotes,
-    maintenance: maintenanceNotes,
-    environmental: environmentalNotes,
-  };
-  const titlesByType = {
-    observation: ['Behavioral Observation', 'Brood Development Check', 'Foraging Trail Survey', 'Population Census', 'Queen Status Report'],
-    feeding: ['Scheduled Feeding', 'Protein Supplement', 'Sugar Water Refill', 'Test Diet Administration'],
-    maintenance: ['Habitat Maintenance', 'Water Reservoir Service', 'Equipment Calibration', 'Substrate Adjustment'],
-    environmental: ['Climate Monitoring', 'Photoperiod Adjustment', 'Humidity Calibration', 'Sensor Cross-Check'],
-  };
-
-  let totalLogs = 0;
-  for (let ci = 0; ci < colonyIds.length; ci++) {
-    const cid = colonyIds[ci];
-    const numLogs = 12 + Math.floor(Math.random() * 8); // 12-20 logs per colony
-    
-    for (let i = 0; i < numLogs; i++) {
-      const entryType = entryTypes[Math.floor(Math.random() * entryTypes.length)];
-      const daysAgo = Math.floor(Math.random() * 30);
-      const hoursOffset = Math.floor(Math.random() * 14) + 7; // 7am - 9pm
-      const occurredAt = new Date(Date.now() - daysAgo * 86400000 + hoursOffset * 3600000).toISOString();
-
-      // Temperature varies by colony (simulating different habitats)
-      const baseTemp = [24, 22, 23, 30, 26][ci] || 24;
-      const baseHum = [62, 70, 55, 35, 80][ci] || 60;
-      const temp = (baseTemp + (Math.random() - 0.5) * 4).toFixed(1);
-      const hum = (baseHum + (Math.random() - 0.5) * 10).toFixed(1);
-
-      const body = {
-        entryType,
-        title: pickRandom(titlesByType[entryType]),
-        content: pickRandom(notesByType[entryType]),
-        occurredAt,
-        environmentalReading: {
-          temperature: parseFloat(temp),
-          humidity: parseFloat(hum),
-        }
-      };
-
-      const logRes = await fetch(`${URLS.log}/api/logs/${cid}`, { method: 'POST', headers, body: JSON.stringify(body) });
-      if (!logRes.ok) { console.error("   Log error:", await logRes.text()); }
-      totalLogs++;
+    console.log(`-> Creating colony: ${c.name} for ${c.owner}`);
+    const res = await fetch(`${URLS.colony}/api/colonies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${context.token}` },
+      body: JSON.stringify({
+        name: c.name,
+        speciesId: specId,
+        queenCount: c.queenCount,
+        estimatedWorkerCount: c.estimatedWorkerCount,
+        description: `This is ${c.name}, part of the ongoing ant behavior research.`
+      })
+    });
+    const payload = await res.json();
+    if (res.ok) {
+        createdColonies.push({ id: payload.data.id, owner: c.owner, name: c.name });
     }
-    console.log(`   [${colonies[ci].name.split('—')[0].trim()}] ${numLogs} entries logged`);
   }
-  
-  console.log(`\n=> Seed complete! ${colonyIds.length} colonies, ${totalLogs} log entries, 5 species.`);
-  console.log("=> Login with: seed.operator@antiverse.com / SeedPassword123!");
+
+  // Cross-pollinate members
+  if (createdColonies.length >= 2) {
+    console.log("-> Adding collaborators...");
+    const alphaCols = createdColonies.filter(c => c.name === 'Vance Lab: Alpha Nest');
+    if (alphaCols.length > 0) {
+      const alpha = alphaCols[0];
+      const assistant = userContexts['lab.assistant@antiverse.com'];
+      await fetch(`${URLS.colony}/api/colonies/${alpha.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userContexts[alpha.owner].token}` },
+        body: JSON.stringify({ userId: assistant.id, accessRole: 'collaborator' })
+      });
+    }
+  }
+
+  // Populate logs over 60 days
+  console.log("-> Generating logs...");
+  const logIdsByColony = {};
+  for (const c of createdColonies) {
+    const context = userContexts[c.owner];
+    logIdsByColony[c.id] = [];
+    const logBatch = [];
+    for (let i = 0; i < 30; i++) {
+        const daysAgo = 60 - i * 2;
+        const date = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+        const isFeeding = Math.random() > 0.7;
+        
+        const payload = {
+            entryType: isFeeding ? 'feeding' : 'observation',
+            title: isFeeding ? 'Maintenance Check' : 'Daily Observation',
+            content: isFeeding ? FEEDING_NOTES[Math.floor(Math.random() * FEEDING_NOTES.length)] : OBSERVATIONS[Math.floor(Math.random() * OBSERVATIONS.length)],
+            occurredAt: date.toISOString(),
+            environmentalReading: {
+                temperature: 20 + Math.random() * 8,
+                humidity: 40 + Math.random() * 40
+            }
+        };
+
+        logBatch.push(fetch(`${URLS.log}/api/logs/${c.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${context.token}` },
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(p => { if (p.data) logIdsByColony[c.id].push(p.data.id); }));
+    }
+    await Promise.all(logBatch);
+    console.log(`   + Logs for ${c.name} generated.`);
+  }
+
+  // Populate Media via Direct DB
+  console.log("-> Seeding mock media gallery...");
+  const dbClient = new pg.Client('postgresql://antiverse_user:password@localhost:5432/antiverse');
+  await dbClient.connect();
+  for (const c of createdColonies) {
+     const ownerId = userContexts[c.owner].id;
+     for (let i = 0; i < SAMPLE_MEDIA.length; i++) {
+        const m = SAMPLE_MEDIA[i];
+        const logId = logIdsByColony[c.id][i] || null;
+        const fileKey = `${c.id}/${m.filename}`;
+        await dbClient.query(`
+          INSERT INTO media_files (id, colony_id, user_id, log_entry_id, file_key, filename, content_type, size_bytes, caption, status)
+          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, 'ready')
+          ON CONFLICT (file_key) DO NOTHING
+        `, [c.id, ownerId, logId, fileKey, m.filename, m.contentType, 1024 * 500, m.caption]);
+     }
+  }
+  await dbClient.end();
+
+  console.log("\n=> SEEDING COMPLETE <=");
+  console.log("User 1: main.researcher@antiverse.com / Password123!");
+  console.log("User 2: lab.assistant@antiverse.com   / Password123!");
+  console.log("Data seeded for 5 colonies, 150 logs, and 20 media records.");
 }
 
 start().catch(console.error);

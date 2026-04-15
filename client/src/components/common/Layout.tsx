@@ -26,7 +26,7 @@ export const Layout = () => {
       <div className="flex flex-col flex-1 min-w-0 z-10 relative">
         <Navbar />
         
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth bg-white/5 backdrop-blur-[2px]">
           <Outlet />
         </main>
       </div>

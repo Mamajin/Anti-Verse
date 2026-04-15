@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMediaStore } from '../stores/mediaStore';
 import { MediaUploader } from '../components/media/MediaUploader';
-import { ArrowLeft, Trash2, ShieldCheck, Download } from 'lucide-react';
+import { ArrowLeft, Trash2, ShieldCheck, Download, FlaskConical, Database, ShieldAlert } from 'lucide-react';
 
 export const MediaGallery = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,17 +16,21 @@ export const MediaGallery = () => {
   const activeUploads = Object.keys(uploads).length > 0;
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
-      <button onClick={() => navigate(`/colonies/${id}`)} className="btn btn-ghost btn-sm mb-2 text-base-content/70 hover:text-primary pl-0">
-        <ArrowLeft size={16} className="mr-1" /> Back to System Overview
+    <div className="space-y-8 animate-fade-in-up max-w-7xl mx-auto pb-20">
+      <button onClick={() => navigate(`/colonies/${id}`)} className="group inline-flex items-center gap-2 text-base-content/40 hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest">
+        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to System Overview
       </button>
 
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Upload Column */}
-        <div className="lg:w-1/3 flex flex-col gap-6 sticky top-20 h-fit">
-          <div>
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent mb-2">Secure Vault</h1>
-            <p className="text-base-content/70">Encrypted media observation records for the active colony.</p>
+        <div className="lg:w-1/3 flex flex-col gap-8 sticky top-20 h-fit">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-primary">
+              <FlaskConical size={24} strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Specimen Archive</span>
+            </div>
+            <h1 className="text-4xl font-black text-base-content tracking-tighter">Secure Vault</h1>
+            <p className="text-base-content/50 font-medium text-sm leading-relaxed">Encrypted media observation records for the active colony bio-system.</p>
           </div>
           <MediaUploader onUpload={(file) => uploadFile(id!, file)} isUploading={activeUploads} uploadProgress={uploads} />
         </div>

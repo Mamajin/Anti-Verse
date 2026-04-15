@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLogStore } from '../stores/logStore';
 import { EnvironmentalChart } from '../components/log/EnvironmentalChart';
-import { ArrowLeft, Clock, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, Plus, Trash2, Microscope, FlaskConical, Thermometer, Droplets, Database, Zap } from 'lucide-react';
 
 export const LogEntries = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,49 +38,80 @@ export const LogEntries = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-5xl mx-auto">
-      <button onClick={() => navigate(`/colonies/${id}`)} className="btn btn-ghost btn-sm mb-2 text-base-content/70 hover:text-primary pl-0">
-        <ArrowLeft size={16} className="mr-1" /> Back to System Overview
+    <div className="space-y-8 animate-fade-in-up max-w-6xl mx-auto pb-20">
+      <button onClick={() => navigate(`/colonies/${id}`)} className="group inline-flex items-center gap-2 text-base-content/40 hover:text-primary transition-colors text-[10px] font-black uppercase tracking-widest">
+        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to System Overview
       </button>
 
-      <div className="flex justify-between items-end">
-         <h1 className="text-3xl font-bold">Telemetry Stream</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+         <div>
+            <div className="flex items-center gap-3 text-primary mb-1">
+              <Database size={20} strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Telemetry Stream</span>
+            </div>
+            <h1 className="text-4xl font-black text-base-content tracking-tighter">Transmission Logs</h1>
+         </div>
+         <div className="flex bg-base-100/40 p-1.5 rounded-2xl border border-base-content/5 shadow-sm">
+            <div className="px-4 py-2 border-r border-base-content/10">
+               <div className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Logged Events</div>
+               <div className="text-xl font-black text-base-content">{entries.length}</div>
+            </div>
+            <div className="px-4 py-2">
+               <div className="text-[10px] font-black text-base-content/30 uppercase tracking-widest">Stream Status</div>
+               <div className="flex items-center gap-2 text-success font-black text-sm uppercase"><Zap size={14} className="animate-pulse" /> Live</div>
+            </div>
+         </div>
       </div>
 
       <EnvironmentalChart />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
-          <form onSubmit={handleSubmit} className="card bg-base-200/50 p-6 border border-base-300 shadow-sm sticky top-20">
-            <h3 className="font-bold text-lg mb-4">Log Sequence</h3>
+          <form onSubmit={handleSubmit} className="glass-lab p-8 rounded-[2.5rem] border-primary/10 sticky top-20">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                <Plus size={20} />
+              </div>
+              <h3 className="font-black text-xl tracking-tight">New Sequence</h3>
+            </div>
             
-            <div className="form-control mb-4">
-              <label className="label"><span className="label-text">Classification</span></label>
-              <select className="select select-bordered" value={formData.entryType} onChange={e => setFormData({...formData, entryType: e.target.value})}>
-                <option value="observation">Observation</option>
-                <option value="feeding">Feeding</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="environmental">Environmental</option>
-              </select>
-            </div>
-
-            <div className="form-control mb-4">
-              <label className="label"><span className="label-text">Notes</span></label>
-              <textarea className="textarea textarea-bordered h-24" required value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea>
-            </div>
-
-            <div className="flex gap-2 mb-4">
-              <div className="form-control w-1/2">
-                <label className="label"><span className="label-text">Temp (°C)</span></label>
-                <input type="number" step="0.1" className="input input-bordered" value={formData.temperature} onChange={e => setFormData({...formData, temperature: e.target.value})} />
+            <div className="space-y-6">
+              <div className="form-control">
+                <label className="label bg-glass-light px-3 py-1 mb-2 inline-flex w-fit"><span className="label-text text-[10px] font-black uppercase tracking-widest text-base-content/60">Classification</span></label>
+                <select className="select select-bordered bg-base-100/50 rounded-xl border-base-content/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all font-bold" value={formData.entryType} onChange={e => setFormData({...formData, entryType: e.target.value})}>
+                  <option value="observation">Observation</option>
+                  <option value="feeding">Feeding</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="environmental">Environmental</option>
+                </select>
               </div>
-              <div className="form-control w-1/2">
-                <label className="label"><span className="label-text">Humidity (%)</span></label>
-                <input type="number" step="0.1" className="input input-bordered" value={formData.humidity} onChange={e => setFormData({...formData, humidity: e.target.value})} />
-              </div>
-            </div>
 
-            <button type="submit" className={`btn btn-primary w-full ${isLoading ? 'loading' : ''}`}><Plus size={18} /> Append Record</button>
+              <div className="form-control">
+                <label className="label bg-glass-light px-3 py-1 mb-2 inline-flex w-fit"><span className="label-text text-[10px] font-black uppercase tracking-widest text-base-content/60">Field Notes</span></label>
+                <textarea className="textarea textarea-bordered h-32 bg-base-100/50 rounded-xl border-base-content/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all font-medium leading-relaxed" required placeholder="Describe detailed behavioral patterns or maintenance actions..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label bg-glass-light px-3 py-1 mb-2 inline-flex w-fit"><span className="label-text text-[10px] font-black uppercase tracking-widest text-base-content/60">Temp (°C)</span></label>
+                  <div className="relative">
+                    <Thermometer className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30" size={16} />
+                    <input type="number" step="0.1" className="input input-bordered w-full pl-10 bg-base-100/50 border-base-content/10 rounded-xl font-bold" value={formData.temperature} onChange={e => setFormData({...formData, temperature: e.target.value})} />
+                  </div>
+                </div>
+                <div className="form-control">
+                  <label className="label bg-glass-light px-3 py-1 mb-2 inline-flex w-fit"><span className="label-text text-[10px] font-black uppercase tracking-widest text-base-content/60">Humidity (%)</span></label>
+                  <div className="relative">
+                    <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30" size={16} />
+                    <input type="number" step="0.1" className="input input-bordered w-full pl-10 bg-base-100/50 border-base-content/10 rounded-xl font-bold" value={formData.humidity} onChange={e => setFormData({...formData, humidity: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" className={`btn btn-primary w-full rounded-2xl h-14 shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-[10px] gap-2 ${isLoading ? 'loading' : ''}`}>
+                <Database size={16} /> Append Record
+              </button>
+            </div>
           </form>
         </div>
 

@@ -1,4 +1,4 @@
-import { Bug } from 'lucide-react';
+import { Bug, Crown, Boxes, ArrowRight, Fingerprint } from 'lucide-react';
 import type { Colony } from '@antiverse/types';
 import { ColonyStatusBadge } from './ColonyStatusBadge';
 
@@ -10,38 +10,50 @@ interface ColonyCardProps {
 export function ColonyCard({ colony, onClick }: ColonyCardProps) {
   return (
     <div
-      className="card bg-base-200/50 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border border-base-300 hover:border-primary/50 group"
+      className="group relative overflow-hidden rounded-3xl bg-base-100/40 backdrop-blur-md border border-base-content/5 hover:border-primary/40 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-500 cursor-pointer"
       onClick={() => onClick(colony.id)}
     >
-      <div className="card-body p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="card-title text-xl group-hover:text-primary transition-colors">{colony.name}</h3>
-            <p className="text-sm text-base-content/60 italic font-medium mt-1">
-              {colony.species?.scientificName || 'Unknown Protocol'}
-            </p>
+      <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
+      
+      <div className="card-body p-7">
+        <div className="flex justify-between items-start mb-6">
+          <div className="p-3 bg-base-200/50 rounded-2xl border border-base-content/5 group-hover:bg-primary/5 transition-colors">
+             <Bug className="text-secondary group-hover:text-primary transition-colors" size={24} />
           </div>
           <ColonyStatusBadge status={colony.status} />
         </div>
 
-        <div className="flex gap-6 mt-6 text-sm font-semibold text-base-content/80">
-          <span className="flex items-center gap-2 bg-base-300/50 px-3 py-1.5 rounded-lg border border-base-content/5">
-            <span className="text-xl">👑</span> {colony.queenCount}
-          </span>
-          {colony.estimatedWorkerCount != null && (
-            <span className="flex items-center gap-2 bg-base-300/50 px-3 py-1.5 rounded-lg border border-base-content/5">
-              <Bug size={16} className="text-primary" /> ~{(colony.estimatedWorkerCount || 0).toLocaleString()}
-            </span>
-          )}
+        <div className="bg-glass-light p-4 rounded-2xl">
+          <div className="space-y-1">
+            <h3 className="text-2xl font-black text-base-content tracking-tight group-hover:text-primary transition-colors">{colony.name}</h3>
+            <p className="text-sm font-bold text-base-content/40 uppercase tracking-widest flex items-center gap-2">
+              <Fingerprint size={12} /> {colony.id.split('-')[0]}
+            </p>
+          </div>
         </div>
 
-        <div className="card-actions justify-between items-end mt-4 pt-4 border-t border-base-300">
-          <span className="text-xs text-base-content/40 font-mono">
-            ID: {colony.id.split('-')[0]}
-          </span>
-          <span className="text-xs text-base-content/50">
-            {colony.foundingDate ? `Authored ${new Date(colony.foundingDate).toLocaleDateString()}` : 'Date Unknown'}
-          </span>
+        <p className="text-base-content/60 italic font-medium mt-4 line-clamp-1 border-l-2 border-primary/20 pl-3">
+          {colony.species?.scientificName || 'Unknown Protocol'}
+        </p>
+
+        <div className="grid grid-cols-2 gap-3 mt-8">
+          <div className="bg-base-200/30 p-3 rounded-2xl border border-base-content/5 flex flex-col items-center justify-center gap-1 group-hover:bg-base-100 transition-colors">
+            <Crown size={14} className="text-secondary" />
+            <span className="text-lg font-black">{colony.queenCount}</span>
+            <span className="text-[10px] uppercase font-bold text-base-content/40">Queens</span>
+          </div>
+          <div className="bg-base-200/30 p-3 rounded-2xl border border-base-content/5 flex flex-col items-center justify-center gap-1 group-hover:bg-base-100 transition-colors">
+            <Boxes size={14} className="text-primary" />
+            <span className="text-lg font-black">{(colony.estimatedWorkerCount || 0).toLocaleString()}</span>
+            <span className="text-[10px] uppercase font-bold text-base-content/40">Workers</span>
+          </div>
+        </div>
+
+        <div className="mt-8 flex justify-between items-center pt-4 border-t border-base-content/5 opacity-40 group-hover:opacity-100 transition-opacity">
+           <span className="text-[10px] font-bold uppercase tracking-tighter">
+             Active Cycle: {new Date().getFullYear()}
+           </span>
+           <ArrowRight size={16} className="text-primary translate-x-[-4px] group-hover:translate-x-0 transition-transform" />
         </div>
       </div>
     </div>

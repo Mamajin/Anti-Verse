@@ -8,7 +8,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   PORT: z.string().transform(Number).default('3004'),
-  
+
   DATABASE_HOST: z.string().default('localhost'),
   DATABASE_PORT: z.string().transform(Number).default('5432'),
   DATABASE_NAME: z.string().default('antiverse'),

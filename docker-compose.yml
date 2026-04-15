@@ -13,7 +13,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U antiverse_user -d antiverse"]
+      test: [ "CMD-SHELL", "pg_isready -U antiverse_user -d antiverse" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -31,7 +31,7 @@ services:
     volumes:
       - minio-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -43,15 +43,10 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin &&
-      if ! mc ls local/antiverse-media > /dev/null 2>&1; then
+      /bin/sh -c " mc alias set local http://minio:9000 minioadmin minioadmin && if ! mc ls local/antiverse-media > /dev/null 2>&1; then
         mc mb local/antiverse-media;
         mc anonymous set public local/antiverse-media;
-      fi;
-      echo 'MinIO initialized successfully';
-      exit 0;
-      "
+      fi; echo 'MinIO initialized successfully'; exit 0; "
 
   auth-service:
     build:
