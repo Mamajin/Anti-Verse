@@ -25,12 +25,19 @@ export const requireAccess = (allowedRoles: AccessRole[] = [AccessRole.Owner, Ac
       if (!colonyId) return next(AppError.badRequest('Missing colony ID'));
 
       const roleStr = await MemberModel.getMemberRole(colonyId, userId);
+      let role: AccessRole;
 
       if (!roleStr) {
-        throw AppError.forbidden(`Requires one of roles: ${allowedRoles.join(', ')} on this colony`);
+        // If NO role is found, we check if it's a "Read" request.
+        // If so, we grant a default 'viewer' role to any authenticated researcher.
+        if (req.method === 'GET') {
+          role = AccessRole.Viewer;
+        } else {
+          throw AppError.forbidden(`Requires one of roles: ${allowedRoles.join(', ')} on this colony`);
+        }
+      } else {
+        role = roleStr as AccessRole;
       }
-      
-      const role = roleStr as AccessRole;
 
       if (!allowedRoles.includes(role)) {
         throw AppError.forbidden(`Requires one of roles: ${allowedRoles.join(', ')} on this colony`);

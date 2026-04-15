@@ -31,6 +31,10 @@ export const ColonyModel = {
       .orderBy('c.created_at', 'desc');
   },
 
+  async findAll(): Promise<ColonyRow[]> {
+    return db<ColonyRow>(Tables.COLONY_COLONIES).orderBy('created_at', 'desc');
+  },
+
   async create(data: Partial<ColonyRow>): Promise<ColonyRow> {
     const [colony] = await db<ColonyRow>(Tables.COLONY_COLONIES).insert(data).returning('*');
     return colony;

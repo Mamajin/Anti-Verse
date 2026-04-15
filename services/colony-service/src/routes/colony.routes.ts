@@ -21,7 +21,7 @@ router.post('/', validate(createColonySchema), ColonyController.createColony);
 
 // Colony-specific
 router.get('/:id', requireAccess([AccessRole.Owner, AccessRole.Collaborator, AccessRole.Viewer]) as RequestHandler, ColonyController.getColony);
-router.patch('/:id', validate(updateColonySchema), requireAccess([AccessRole.Owner, AccessRole.Collaborator]) as RequestHandler, ColonyController.updateColony);
+router.patch('/:id', validate(updateColonySchema), requireAccess([AccessRole.Owner]) as RequestHandler, ColonyController.updateColony);
 
 // Members
 router.get('/:id/members', requireAccess([AccessRole.Owner, AccessRole.Collaborator, AccessRole.Viewer]) as RequestHandler, ColonyController.listMembers);

@@ -18,9 +18,7 @@ export class ColonyController {
 
   static async listColonies(req: Request, res: Response, next: NextFunction) {
     try {
-      const colonies = await ColonyModel.findByUserId(req.user!.userId);
-      // Map to Domain models - wait, we should join species here, but to save time, we return the rows for now.
-      // In a real app we'd attach the species summary.
+      const colonies = await ColonyModel.findAll();
       res.json({ data: colonies });
     } catch (err) {
       next(err);
