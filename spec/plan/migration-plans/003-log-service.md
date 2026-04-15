@@ -3,6 +3,7 @@
 **Service**: `log-service`
 **Database**: `antiverse` (shared instance)
 **Table prefix**: `log_`
+**Migration tracking table**: `log_service_migrations`
 
 ---
 
@@ -10,63 +11,118 @@
 
 ### `log_entries`
 
-Journal entries linked to colonies. Each entry has a type and optional environmental readings.
+Journal entries linked to colonies. Each entry has a category type and free-text content.
 
-| Column | Type | Constraints | Description |
-|---|---|---|---|
-| `id` | `UUID` | `PRIMARY KEY`, `DEFAULT gen_random_uuid()` | Entry identifier |
-| `colony_id` | `UUID` | `NOT NULL` | Colony this entry belongs to (validated via Colony Service API) |
-| `user_id` | `UUID` | `NOT NULL` | Author's user ID (from Auth Service) |
-| `entry_type` | `VARCHAR(20)` | `NOT NULL`, `CHECK (entry_type IN ('observation', 'feeding', 'maintenance', 'environmental'))` | Entry category |
-| `title` | `VARCHAR(200)` | `NOT NULL` | Short title / summary |
-| `content` | `TEXT` | `NOT NULL` | Full observation text |
-| `occurred_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT NOW()` | When the observation occurred |
-| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT NOW()` | Record creation time |
-| `updated_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT NOW()` | Last edit time |
+| Column | Type | Constraints | Default | Description |
+|---|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY` | `gen_random_uuid()` | Entry identifier |
+| `colony_id` | `UUID` | `NOT NULL` | — | Colony this entry belongs to. *Not a FK — validated via Colony Service API.* |
+| `user_id` | `UUID` | `NOT NULL` | — | Author's user ID. *Not a FK — validated via Auth Service API.* |
+| `entry_type` | `log_entry_type` ENUM | `NOT NULL` | — | Category: `observation`, `feeding`, `maintenance`, `environmental` |
+| `title` | `VARCHAR(200)` | `NOT NULL` | — | Short title / summary |
+| `content` | `TEXT` | `NOT NULL` | — | Full observation text (max 10,000 chars enforced at app layer) |
+| `occurred_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | When the observation occurred (user-specified or default) |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Record creation time |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Last edit time |
+
+**Type Decisions**
+
+| Column | Why This Type |
+|---|---|
+| `colony_id` (UUID, no FK) | Cross-service reference. Colony Service owns this data. Validated on every write via `GET /api/colonies/:id/verify`. |
+| `user_id` (UUID, no FK) | Cross-service reference. Auth Service owns this data. Validated via JWT verification. |
+| `entry_type` (native ENUM) | Fixed set of 4 values. Type-safe, storage-efficient, and queryable. |
+| `content` (TEXT) | Unbounded at DB level; 10,000 char limit enforced by Zod validation in the API layer. |
+| `occurred_at` (TIMESTAMPTZ) | The observation time may differ from creation time (user backdates entries). Timezone-aware for global use. |
 
 **Indexes**
-- `idx_log_entries_colony_id` — on `colony_id` (list entries for a colony)
-- `idx_log_entries_user_id` — on `user_id` (list entries by a user)
-- `idx_log_entries_occurred_at` — on `occurred_at` (date range queries)
-- `idx_log_entries_entry_type` — on `entry_type` (filter by type)
-- `idx_log_entries_colony_occurred` — composite on `(colony_id, occurred_at DESC)` (paginated colony timeline)
+
+| Name | Columns | Type | Purpose |
+|---|---|---|---|
+| `log_entries_pkey` | `id` | PRIMARY KEY | PK lookup |
+| `idx_log_entries_colony_id` | `colony_id` | B-tree | List all entries for a colony |
+| `idx_log_entries_user_id` | `user_id` | B-tree | List all entries by a user |
+| `idx_log_entries_entry_type` | `entry_type` | B-tree | Filter by entry type |
+| `idx_log_entries_colony_occurred` | `(colony_id, occurred_at DESC)` | B-tree composite | **Primary query pattern**: paginated colony timeline sorted by most recent |
+| `idx_log_entries_colony_type_occurred` | `(colony_id, entry_type, occurred_at DESC)` | B-tree composite | Colony timeline filtered by type |
+
+**Index Design Rationale**: The two composite indexes cover the two most common query patterns:
+1. "Show me all entries for colony X, newest first" → `idx_log_entries_colony_occurred`
+2. "Show me all observation entries for colony X, newest first" → `idx_log_entries_colony_type_occurred`
+
+Both support efficient keyset or offset pagination.
 
 ---
 
 ### `log_environmental_readings`
 
-Structured environmental measurements attached to log entries. One reading per log entry (1:1 relationship, but stored separately for query performance on chart data).
+Structured environmental measurements attached to log entries. One reading per log entry (1:1 relationship). Stored separately for chart query performance.
 
-| Column | Type | Constraints | Description |
-|---|---|---|---|
-| `id` | `UUID` | `PRIMARY KEY`, `DEFAULT gen_random_uuid()` | Reading identifier |
-| `log_entry_id` | `UUID` | `NOT NULL`, `UNIQUE`, `REFERENCES log_entries(id) ON DELETE CASCADE` | Parent log entry |
-| `colony_id` | `UUID` | `NOT NULL` | Denormalized colony ID for faster chart queries |
-| `temperature` | `DECIMAL(5,2)` | | Temperature in °C |
-| `humidity` | `DECIMAL(5,2)` | `CHECK (humidity >= 0 AND humidity <= 100)` | Relative humidity % |
-| `light_level` | `DECIMAL(10,2)` | `CHECK (light_level >= 0)` | Light intensity in lux |
-| `recorded_at` | `TIMESTAMPTZ` | `NOT NULL` | Copied from parent entry's `occurred_at` |
-| `created_at` | `TIMESTAMPTZ` | `NOT NULL`, `DEFAULT NOW()` | Record creation time |
+| Column | Type | Constraints | Default | Description |
+|---|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY` | `gen_random_uuid()` | Reading identifier |
+| `log_entry_id` | `UUID` | `NOT NULL`, `UNIQUE`, `FK → log_entries(id) ON DELETE CASCADE` | — | Parent log entry (1:1) |
+| `colony_id` | `UUID` | `NOT NULL` | — | **Denormalized** colony ID for chart queries |
+| `temperature` | `DECIMAL(5,2)` | — | — | Temperature in °C (range: -99.99 to 999.99) |
+| `humidity` | `DECIMAL(5,2)` | `CHECK (>= 0 AND <= 100)` | — | Relative humidity % |
+| `light_level` | `DECIMAL(10,2)` | `CHECK (>= 0)` | — | Light intensity in lux |
+| `recorded_at` | `TIMESTAMPTZ` | `NOT NULL` | — | Copied from parent's `occurred_at` |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Record creation time |
+
+**Type Decisions**
+
+| Column | Why This Type |
+|---|---|
+| `temperature` (DECIMAL 5,2) | 2 decimal precision for scientific readings. Range supports -99.99°C to 999.99°C (sufficient for all terrestrial environments). |
+| `humidity` (DECIMAL 5,2) | Percentage 0.00–100.00. Check constraint enforces valid range. |
+| `light_level` (DECIMAL 10,2) | Lux can range from 0 (dark) to 100,000+ (direct sunlight). DECIMAL(10,2) supports up to 99,999,999.99 lux. |
+| `colony_id` (denormalized) | Key design decision — see rationale below. |
+| `recorded_at` (copied) | Duplicated from parent entry to avoid joining `log_entries` for chart data queries. |
 
 **Indexes**
-- `idx_log_env_colony_recorded` — composite on `(colony_id, recorded_at DESC)` (time-series chart queries)
-- `idx_log_env_log_entry_id` — `UNIQUE` on `log_entry_id` (1:1 join)
+
+| Name | Columns | Type | Purpose |
+|---|---|---|---|
+| `log_environmental_readings_pkey` | `id` | PRIMARY KEY | PK lookup |
+| `log_env_log_entry_id_unique` | `log_entry_id` | UNIQUE | Enforces 1:1 with log_entries; fast join |
+| `idx_log_env_colony_recorded` | `(colony_id, recorded_at DESC)` | B-tree composite | **Chart query** — time-series range scans for Apex Charts |
 
 ---
 
 ## Design Decisions
 
-### Why separate the environmental readings table?
+### Why a Separate Environmental Readings Table?
 
-1. **Chart performance**: The dashboard uses Apex Charts to plot temperature/humidity/light over time. A dedicated table allows efficient range queries without loading full log text content.
-2. **Schema clarity**: Not all log entries have environmental data. Separating avoids sparse nullable columns on the main table.
-3. **Denormalized `colony_id`**: Copied from the parent entry to avoid a JOIN when building chart datasets.
+**Option A (rejected)**: Add temperature/humidity/light columns directly to `log_entries`.
+- ❌ Most log entries (~70%) won't have environmental data → lots of NULL columns
+- ❌ Chart queries would scan the large `log_entries` table including all text content
+- ❌ Adding new sensor types (e.g., CO2, pH) would keep expanding the main table
 
-### Colony validation
+**Option B (chosen)**: Separate `log_environmental_readings` table.
+- ✅ Only query the small, numeric-only table for chart data
+- ✅ The composite index `(colony_id, recorded_at)` gives fast time-series range scans
+- ✅ No NULL bloat in the main entries table
+- ✅ Easy to add new sensor columns without touching log_entries
+- ✅ Denormalized `colony_id` eliminates the need for a join in chart queries
 
-The Log Service does **not** have a foreign key to `colony_colonies` (that table belongs to Colony Service). Instead, on every write operation, the Log Service calls `GET /api/colonies/:id/verify` on the Colony Service to confirm:
-- The colony exists
-- The requesting user has at least `collaborator` access
+### Why Denormalize `colony_id`?
+
+The `colony_id` exists on both `log_entries` and `log_environmental_readings`. This is intentional:
+
+- **Without denormalization**: Chart queries would need to join `log_environmental_readings` → `log_entries` to filter by colony. For large datasets with thousands of readings, this join is unnecessary overhead.
+- **With denormalization**: Chart query becomes a simple index scan: `SELECT * FROM log_environmental_readings WHERE colony_id = $1 AND recorded_at BETWEEN $2 AND $3 ORDER BY recorded_at`.
+- **Consistency**: Since readings are always created alongside their parent entry (same transaction), and colony_id never changes on an entry, the denormalized value is always correct.
+
+### Cross-Service Validation
+
+The Log Service does **not** have a foreign key to `colony_colonies` — that table belongs to Colony Service. On every **write** operation (create, update, delete), the Log Service:
+
+1. Calls `GET /api/auth/verify` to confirm the user's identity
+2. Calls `GET /api/colonies/:id/verify` to confirm:
+   - The colony exists and is not deleted
+   - The requesting user has at least `collaborator` access (not `viewer`)
+
+On **read** operations, the same verification happens but `viewer` access is sufficient.
 
 ---
 
@@ -76,16 +132,19 @@ The Log Service does **not** have a foreign key to `colony_colonies` (that table
 // migrations/003_create_log_tables.js
 
 exports.up = async function (knex) {
+  // Create native ENUM type
+  await knex.raw(`
+    DO $$ BEGIN
+      CREATE TYPE log_entry_type AS ENUM ('observation', 'feeding', 'maintenance', 'environmental');
+    EXCEPTION WHEN duplicate_object THEN null; END $$;
+  `);
+
+  // Log entries
   await knex.schema.createTable('log_entries', (table) => {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('colony_id').notNullable();
     table.uuid('user_id').notNullable();
-    table
-      .enu('entry_type', ['observation', 'feeding', 'maintenance', 'environmental'], {
-        useNative: true,
-        enumName: 'log_entry_type',
-      })
-      .notNullable();
+    table.specificType('entry_type', 'log_entry_type').notNullable();
     table.string('title', 200).notNullable();
     table.text('content').notNullable();
     table.timestamp('occurred_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
@@ -94,33 +153,46 @@ exports.up = async function (knex) {
 
     table.index(['colony_id'], 'idx_log_entries_colony_id');
     table.index(['user_id'], 'idx_log_entries_user_id');
-    table.index(['occurred_at'], 'idx_log_entries_occurred_at');
     table.index(['entry_type'], 'idx_log_entries_entry_type');
-    table.index(['colony_id', 'occurred_at'], 'idx_log_entries_colony_occurred');
   });
 
+  // Composite indexes for common query patterns
+  await knex.raw(`
+    CREATE INDEX idx_log_entries_colony_occurred
+    ON log_entries (colony_id, occurred_at DESC);
+  `);
+  await knex.raw(`
+    CREATE INDEX idx_log_entries_colony_type_occurred
+    ON log_entries (colony_id, entry_type, occurred_at DESC);
+  `);
+
+  // Environmental readings
   await knex.schema.createTable('log_environmental_readings', (table) => {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table
-      .uuid('log_entry_id')
-      .notNullable()
-      .unique()
-      .references('id')
-      .inTable('log_entries')
-      .onDelete('CASCADE');
+    table.uuid('log_entry_id').notNullable().unique().references('id').inTable('log_entries').onDelete('CASCADE');
     table.uuid('colony_id').notNullable();
     table.decimal('temperature', 5, 2);
     table.decimal('humidity', 5, 2);
     table.decimal('light_level', 10, 2);
     table.timestamp('recorded_at', { useTz: true }).notNullable();
     table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
-
-    // Range constraints
-    table.check('?? IS NULL OR (?? >= 0 AND ?? <= 100)', ['humidity', 'humidity', 'humidity']);
-    table.check('?? IS NULL OR ?? >= 0', ['light_level', 'light_level']);
-
-    table.index(['colony_id', 'recorded_at'], 'idx_log_env_colony_recorded');
   });
+
+  // Check constraints
+  await knex.raw(`
+    ALTER TABLE log_environmental_readings
+    ADD CONSTRAINT chk_humidity CHECK (humidity IS NULL OR (humidity >= 0 AND humidity <= 100));
+  `);
+  await knex.raw(`
+    ALTER TABLE log_environmental_readings
+    ADD CONSTRAINT chk_light_level CHECK (light_level IS NULL OR light_level >= 0);
+  `);
+
+  // Chart query index (the most important index in this table)
+  await knex.raw(`
+    CREATE INDEX idx_log_env_colony_recorded
+    ON log_environmental_readings (colony_id, recorded_at DESC);
+  `);
 };
 
 exports.down = async function (knex) {
@@ -132,16 +204,100 @@ exports.down = async function (knex) {
 
 ---
 
+## Rollback Strategy
+
+**`exports.down`** drops tables in reverse dependency order:
+1. `log_environmental_readings` (FK → log_entries)
+2. `log_entries`
+3. `log_entry_type` ENUM
+
+**Data loss warning**: Rolling back deletes all log entries and environmental readings. Media attached to log entries will become orphaned (their `log_entry_id` reference will be dangling).
+
+---
+
 ## Seed Data
 
 ```js
 // seeds/003_sample_log_entries.js
-// NOTE: This seed depends on having a colony and user inserted first.
-// Use in dev only after auth + colony seeds have run.
+// NOTE: Requires admin user (from auth seed) and at least one colony to exist.
+// Run after auth and colony seeds. For manual dev setup, create a colony via API first.
 
 exports.seed = async function (knex) {
-  // Sample entries would reference real colony/user IDs from prior seeds.
-  // Skipping auto-insert here; use the API or a dev script instead.
-  console.log('Log seed: Use the API to create sample log entries after colonies exist.');
+  console.log('ℹ️  Log seed: Create sample entries via the API after setting up a colony.');
+  console.log('   Example:');
+  console.log('   1. POST /api/auth/login → get access token');
+  console.log('   2. POST /api/colonies → create a colony');
+  console.log('   3. POST /api/logs/:colonyId → create log entries');
 };
+```
+
+---
+
+## Maintenance Queries
+
+```sql
+-- Count entries per colony
+SELECT colony_id, COUNT(*) as entry_count
+FROM log_entries
+GROUP BY colony_id
+ORDER BY entry_count DESC;
+
+-- Count entries by type
+SELECT entry_type, COUNT(*) as count FROM log_entries GROUP BY entry_type;
+
+-- Average environmental readings per colony (last 30 days)
+SELECT
+  colony_id,
+  ROUND(AVG(temperature), 1) as avg_temp,
+  ROUND(AVG(humidity), 1) as avg_humidity,
+  ROUND(AVG(light_level), 0) as avg_light,
+  COUNT(*) as reading_count
+FROM log_environmental_readings
+WHERE recorded_at > NOW() - INTERVAL '30 days'
+GROUP BY colony_id;
+
+-- Chart data query (what the API endpoint generates)
+SELECT recorded_at, temperature, humidity, light_level
+FROM log_environmental_readings
+WHERE colony_id = $1
+  AND recorded_at BETWEEN $2 AND $3
+ORDER BY recorded_at ASC;
+
+-- Entries with no environmental reading (content-only entries)
+SELECT le.id, le.title, le.entry_type
+FROM log_entries le
+LEFT JOIN log_environmental_readings er ON le.id = er.log_entry_id
+WHERE er.id IS NULL
+  AND le.colony_id = $1;
+```
+
+---
+
+## Example Queries (Application Layer)
+
+```sql
+-- Paginated colony timeline (most common query)
+SELECT le.*, er.temperature, er.humidity, er.light_level
+FROM log_entries le
+LEFT JOIN log_environmental_readings er ON le.id = er.log_entry_id
+WHERE le.colony_id = $1
+ORDER BY le.occurred_at DESC
+LIMIT $2 OFFSET $3;
+
+-- Filtered by type
+SELECT le.*, er.temperature, er.humidity, er.light_level
+FROM log_entries le
+LEFT JOIN log_environmental_readings er ON le.id = er.log_entry_id
+WHERE le.colony_id = $1
+  AND le.entry_type = $2
+ORDER BY le.occurred_at DESC
+LIMIT $3 OFFSET $4;
+
+-- Date range filter
+SELECT le.*, er.temperature, er.humidity, er.light_level
+FROM log_entries le
+LEFT JOIN log_environmental_readings er ON le.id = er.log_entry_id
+WHERE le.colony_id = $1
+  AND le.occurred_at BETWEEN $2 AND $3
+ORDER BY le.occurred_at DESC;
 ```
