@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useColonyStore } from '../stores/colonyStore';
 import { ColonyStatusBadge } from '../components/colony/ColonyStatusBadge';
 import { MemberList } from '../components/colony/MemberList';
-import { Activity, Users, Settings, Database, ArrowLeft } from 'lucide-react';
+import { Activity, Users, Settings, Database, ArrowLeft, Image as ImageLucide } from 'lucide-react';
 
 export const ColonyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,6 +54,7 @@ export const ColonyDetail = () => {
           <button className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`} onClick={() => setActiveTab('overview')}><Activity size={16} className="mr-2" /> Overview</button>
           <button className={`tab ${activeTab === 'members' ? 'tab-active' : ''}`} onClick={() => setActiveTab('members')}><Users size={16} className="mr-2" /> Operators</button>
           <button className={`tab ${activeTab === 'logs' ? 'tab-active' : ''}`} onClick={() => navigate(`/colonies/${id}/logs`)}><Database size={16} className="mr-2" /> Logs & Telemetry</button>
+          <button className={`tab ${activeTab === 'media' ? 'tab-active' : ''}`} onClick={() => navigate(`/colonies/${id}/media`)}><ImageLucide size={16} className="mr-2" /> Secure Vault</button>
           <button className={`tab ${activeTab === 'settings' ? 'tab-active' : ''}`} onClick={() => setActiveTab('settings')}><Settings size={16} className="mr-2" /> Protocol Settings</button>
         </div>
       </header>
