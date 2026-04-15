@@ -32,7 +32,7 @@ export function ColonyCard({ colony, onClick }: ColonyCardProps) {
           </div>
         </div>
 
-        <p className="text-base-content/60 italic font-medium mt-4 line-clamp-1 border-l-2 border-primary/20 pl-3">
+        <p className="bg-glass-light px-3 py-1 text-base-content/60 italic font-medium mt-4 line-clamp-1 border-l-2 border-primary/20 pl-3">
           {colony.species?.scientificName || 'Unknown Protocol'}
         </p>
 

@@ -3,7 +3,7 @@ import Chart from 'react-apexcharts';
 import { useAuthStore } from '../stores/authStore';
 import { useColonyStore } from '../stores/colonyStore';
 import { useNavigate } from 'react-router-dom';
-import { Zap, TrendingUp, Box, Microscope, Activity, Play, Plus, ChevronRight, ShieldCheck } from 'lucide-react';
+import { Zap, TrendingUp, Box, Microscope, Activity, Play, Plus, ChevronRight, ShieldCheck, Bug } from 'lucide-react';
 
 export const DashboardPage = () => {
   const { user } = useAuthStore();
@@ -105,31 +105,38 @@ export const DashboardPage = () => {
               </h2>
             </div>
             
-            {colonies.length === 0 ? (
+            {((colonies || []).length === 0) ? (
               <div className="text-center text-base-content/30 py-16 flex flex-col items-center gap-4 border-2 border-dashed border-base-content/5 rounded-3xl">
                 <Microscope size={48} strokeWidth={1} />
                 <span className="text-xs uppercase font-bold tracking-widest">No active telemetry found</span>
               </div>
             ) : (
               <ul className="space-y-3">
-                {colonies.slice(0, 5).map(c => (
-                  <li 
-                    key={c.id} 
-                    className="flex justify-between items-center p-4 bg-base-200/40 hover:bg-primary/5 border border-transparent hover:border-primary/20 rounded-2xl transition-all cursor-pointer group"
-                    onClick={() => navigate(`/colonies/${c.id}`)}
-                  >
-                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-xl bg-base-100 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                          <Bug className="text-secondary group-hover:text-primary transition-colors" size={18} />
+                {colonies.slice(0, 5).map(c => {
+                  // Ensure species data is attached
+                  const species = c.species || speciesLookup.find(s => s.id === c.speciesId);
+                  
+                  return (
+                    <li 
+                      key={c.id} 
+                      className="flex justify-between items-center p-4 bg-base-200/40 hover:bg-primary/5 border border-transparent hover:border-primary/20 rounded-2xl transition-all cursor-pointer group"
+                      onClick={() => navigate(`/colonies/${c.id}`)}
+                    >
+                       <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-xl bg-base-100 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                            <Bug className="text-secondary group-hover:text-primary transition-colors" size={18} />
+                         </div>
+                         <div className="bg-glass-light px-3 py-1">
+                           <div className="font-black text-sm group-hover:text-primary transition-colors">{c.name}</div>
+                           <div className="text-[10px] font-bold text-base-content/40 uppercase tracking-widest">
+                             {(species?.scientificName?.split(' ') || [])[0] || 'Unknown'}
+                           </div>
+                         </div>
                        </div>
-                       <div className="bg-glass-light px-3 py-1">
-                         <div className="font-black text-sm group-hover:text-primary transition-colors">{c.name}</div>
-                         <div className="text-[10px] font-bold text-base-content/40 uppercase tracking-widest">{c.species?.scientificName?.split(' ')[0] || 'Unknown'}</div>
-                       </div>
-                     </div>
-                     <ChevronRight size={16} className="text-base-content/20 group-hover:text-primary transition-colors" />
-                  </li>
-                ))}
+                       <ChevronRight size={16} className="text-base-content/20 group-hover:text-primary transition-colors" />
+                    </li>
+                  );
+                })}
               </ul>
             )}
 
