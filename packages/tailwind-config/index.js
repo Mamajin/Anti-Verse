@@ -16,18 +16,21 @@ module.exports = {
     themes: [
       {
         antiverseTheme: {
-          "primary": "#34d399",     // Emerald 400
-          "primary-focus": "#059669",// Emerald 600
-          "secondary": "#38bdf8",   // Light Blue 400
-          "accent": "#f472b6",      // Pink 400
-          "neutral": "#1f2937",     // Gray 800
-          "base-100": "#ffffff",    // Background
-          "base-200": "#f3f4f6",    // Slightly darker background
-          "base-300": "#e5e7eb",    // Even darker
-          "info": "#60a5fa",
-          "success": "#34d399",
-          "warning": "#fbbf24",
-          "error": "#f87171",
+          "primary": "#6B705C",       // Muted olive green
+          "primary-focus": "#545749", // Darker olive
+          "primary-content": "#ffffff",
+          "secondary": "#CB997E",     // Terracotta / warm clay
+          "secondary-focus": "#B48369",
+          "secondary-content": "#ffffff",
+          "accent": "#A5A58D",        // Light sage
+          "neutral": "#8B7355",       // Warm bark brown
+          "base-100": "#FDFBF7",      // Parchment / light sand background
+          "base-200": "#F4EFE6",      // Soft beige
+          "base-300": "#E8DCC8",      // Deeper beige
+          "info": "#B7B7A4",
+          "success": "#728C69",
+          "warning": "#DDBEA9",
+          "error": "#9E2A2B",
         },
       },
       "dark",
