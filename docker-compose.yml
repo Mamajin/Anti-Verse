@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: antiverse-postgres
+    environment:
+      POSTGRES_USER: antiverse_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: antiverse
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U antiverse_user -d antiverse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: antiverse-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: antiverse-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      if ! mc ls local/antiverse-media > /dev/null 2>&1; then
+        mc mb local/antiverse-media;
+        mc anonymous set public local/antiverse-media;
+      fi;
+      echo 'MinIO initialized successfully';
+      exit 0;
+      "
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+      target: production
+    container_name: antiverse-auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: antiverse
+      DATABASE_USER: antiverse_user
+      DATABASE_PASSWORD: password
+      JWT_ACCESS_SECRET: default_dev_secret_key_1234567890
+      JWT_REFRESH_SECRET: default_dev_refresh_key_0987654321
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3001:3001"
+
+  colony-service:
+    build:
+      context: .
+      dockerfile: services/colony-service/Dockerfile
+      target: production
+    container_name: antiverse-colony
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: antiverse
+      DATABASE_USER: antiverse_user
+      DATABASE_PASSWORD: password
+      AUTH_SERVICE_URL: http://auth-service:3001
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3002:3002"
+
+  log-service:
+    build:
+      context: .
+      dockerfile: services/log-service/Dockerfile
+      target: production
+    container_name: antiverse-log
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      colony-service:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: antiverse
+      DATABASE_USER: antiverse_user
+      DATABASE_PASSWORD: password
+      AUTH_SERVICE_URL: http://auth-service:3001
+      COLONY_SERVICE_URL: http://colony-service:3002
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3003:3003"
+
+  media-service:
+    build:
+      context: .
+      dockerfile: services/media-service/Dockerfile
+      target: production
+    container_name: antiverse-media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      auth-service:
+        condition: service_started
+      colony-service:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: antiverse
+      DATABASE_USER: antiverse_user
+      DATABASE_PASSWORD: password
+      AUTH_SERVICE_URL: http://auth-service:3001
+      COLONY_SERVICE_URL: http://colony-service:3002
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: antiverse-media
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_FORCE_PATH_STYLE: "true"
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3004:3004"
+
+volumes:
+  pg-data:
+  minio-data:
