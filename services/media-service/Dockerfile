@@ -33,4 +33,4 @@ WORKDIR /app/services/media-service
 
 EXPOSE 3004
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/src/server.js"]

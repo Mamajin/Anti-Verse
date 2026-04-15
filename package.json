@@ -9,7 +9,7 @@
     "client"
   ],
   "scripts": {
-    "typecheck": "npm run build --workspaces --if-present",
+    "typecheck": "npm run build -w @antiverse/types && npm run build -w @antiverse/database && npm run build -w @antiverse/api-client && npm run build --workspaces --if-present",
     "clean": "rimraf packages/*/dist services/*/dist client/dist"
   },
   "engines": {
